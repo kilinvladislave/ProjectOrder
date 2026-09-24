@@ -2,6 +2,19 @@
 
 Адаптивный веб-сайт для учёта заказов на фото товаров. Kanban-доска, CRUD заказов, загрузка файлов в Cloudinary, экспорт CSV.
 
+## Поля заказа
+
+- `code` — код заказа (неуникальный, необязательный)
+- `title` — название (обязательное)
+- `description` — описание
+- `price` — стоимость товара
+- `workPrice` — стоимость работы
+- `paid` — оплачено/неоплачено
+- `manager` — менеджер (Даша / Аня / Алина)
+- `startDate` — дата начала заказа (указывается вручную, отображается зелёным в карточке)
+- `deadline` — срок выполнения
+- `status` — 0 = В работе, 1 = Готово
+
 ## Структура
 
 Монорепозиторий с npm workspaces:
@@ -48,15 +61,13 @@ JWT на базе env-переменных. POST /api/login проверяет c
 
 ## Деплой
 
-Хостинг — один VPS Ubuntu 22.04/24.04. Стек: nginx (TLS + статика + reverse proxy) → Node.js под PM2 → локальный PostgreSQL. Файлы — Cloudinary.
+Основной хостинг — **Vercel** (статика + `/api` serverless через `api/index.js` + `vercel.json`) + **Neon** (PostgreSQL, pooled connection). Файлы — Cloudinary. Runbook миграции/отката: [`deploy/VERCEL.md`](deploy/VERCEL.md).
 
-**DNS:** A-запись домена указывает напрямую на IP VPS. Cloudflare **не используется как proxy** (DNS-only, серый облако), так как Cloudflare proxy严重限速 для российских VPS.
+VPS (nginx + PM2 + локальный Postgres) — запасной вариант, инструкция [`deploy/INSTALL.md`](deploy/INSTALL.md). Откат — DNS обратно на IP VPS. Локально `npm run dev` работает как раньше (Express раздаёт статику сам, на Vercel — платформа).
 
-Полная инструкция: [`deploy/INSTALL.md`](deploy/INSTALL.md).
+**DNS:** A-запись домена на Vercel (`76.76.21.21`). Cloudflare **не используется как proxy** (DNS-only, серый облако), так как Cloudflare proxy严重限速 для российских VPS.
 
 Артефакты деплоя:
-- `deploy/nginx.conf` — конфиг сайта (SPA fallback, `/api` → `127.0.0.1:3001`, gzip, sendfile, `client_max_body_size 25M`)
-- `deploy/ecosystem.config.cjs` — PM2 (1 fork, autorestart, логи в `logs/`)
-- `deploy/deploy.sh` — обновление: `git pull` → `npm ci` → `prisma migrate deploy` → `vite build` → `pm2 reload`
-
-Прод-сервер слушает `127.0.0.1:3001` (наружу не торчит), Postgres — только loopback. SSL — Let's Encrypt через `certbot --nginx`.
+- `vercel.json` — сборка клиента, SPA fallback, реврайт `/api` → `api/index.js`, регион fra1
+- `deploy/VERCEL.md` — runbook миграции с VPS и отката
+- `deploy/nginx.conf`, `deploy/ecosystem.config.cjs`, `deploy/deploy.sh` — fallback-VPS (nginx → `127.0.0.1:3001`, PM2)

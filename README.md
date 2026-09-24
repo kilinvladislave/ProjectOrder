@@ -7,6 +7,7 @@
 - Kanban-доска с колонками «В работе» / «Готово»
 - Drag-and-drop карточек (десктоп)
 - Создание, просмотр, редактирование, удаление заказов
+- Дата начала заказа (указывается вручную)
 - Загрузка фото/видео в Cloudinary
 - Поиск по названию и коду, фильтры по статусу и просрочке
 - Экспорт всех заказов в CSV
@@ -64,20 +65,9 @@ npm run dev
 
 ## Деплой
 
-Один VPS Ubuntu 22.04/24.04: nginx + PM2 + PostgreSQL + Let's Encrypt.
+Основной хостинг — **Vercel** (фронт + API serverless) + **Neon** (PostgreSQL), бесплатно. Runbook миграции и отката — [`deploy/VERCEL.md`](deploy/VERCEL.md).
 
-Полная инструкция — [`deploy/INSTALL.md`](deploy/INSTALL.md).
-
-Кратко:
-
-1. Установить Node 20, PostgreSQL 16, nginx, certbot, PM2.
-2. Клонировать репозиторий в `/var/www/photoorder`, заполнить `server/.env`.
-3. `npm ci` → `npx prisma migrate deploy` → `npm run build -w client`.
-4. `pm2 start deploy/ecosystem.config.cjs` + `pm2 save` + `pm2 startup`.
-5. Скопировать `deploy/nginx.conf` в `/etc/nginx/sites-available/`, заменить `YOUR_DOMAIN`, активировать.
-6. `sudo certbot --nginx -d your-domain.tld`.
-
-Обновление: `bash deploy/deploy.sh` (`git pull` → сборка → `pm2 reload`).
+Запасной вариант — VPS Ubuntu 22.04/24.04 (nginx + PM2 + PostgreSQL): [`deploy/INSTALL.md`](deploy/INSTALL.md). Откат — DNS обратно на IP VPS.
 
 ### Cloudinary
 
@@ -91,4 +81,4 @@ npm run dev
 |------|-----------|
 | Frontend | React 18, Vite, Tailwind CSS, Zustand, React Hook Form, Zod, @dnd-kit, axios |
 | Backend | Node.js, Express, Prisma, PostgreSQL, Cloudinary SDK, jsonwebtoken |
-| Хостинг | Ubuntu VPS (nginx + PM2 + PostgreSQL), Cloudinary (файлы) |
+| Хостинг | Vercel + Neon, Cloudinary (файлы); fallback — VPS |
